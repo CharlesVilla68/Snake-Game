@@ -1,7 +1,10 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /*This defines the main body of the browser*/
     body {
       margin: 0;
       display: flex;
@@ -10,55 +13,44 @@
       height: 100vh;
       background-color: #f0f0f0;
     }
-    /*This defines a fixed header within the page*/
+
     #header {
-        /*This makes it so that the header area can't move*/
         position: fixed;
-        /*Makes the header at the very top of the page*/
         top: 0;
-        /*Makes the header at the very left of the page*/
         left: 0;
-        /*Makes the header area a gray color*/
         background-color: #ccc;
-        /*Areas in between the words and the edges of the header box*/
-        padding: 5px;
+        padding: 10px;
+        box-sizing: border-box;
+        z-index: 1;
     }
-    /*This is the border around the grid the game will be played on*/
+
     #game-container {
-      /*This defines the border itself as being a solid black line and 1 pixel wide*/
       border: 1px solid #000;
-      /*This adds 20 pixels of padding between the game board and the border*/
-      padding: 20px;
+      padding: 10px;
+      box-sizing: border-box;
     }
-    /*This defines the game board itself that the snake and food will be within*/
+
     #game-board {
-      /*Self explanatory, but it will be positioned relative to where it started*/
       position: relative;
-      /*Makes the board a grid container to make it easier to tell where the snake is relative to the rest of the board*/
       display: grid;
     }
-    /*This defines the cells within the game board*/
+
     .cell {
-      /*Width of each cell*/
       width: 20px;
-      /*Height of each cell*/
       height: 20px;
-      /*Border of each cell is a solid gray line and 1 pixel wide*/
+      box-sizing: border-box;
       border: 1px solid #ccc;
     }
-    /*This defines the parts of the snake*/
+
     .snake {
-      /*This is the snake's color, can be changed though using the color slide*/
       background-color: green;
     }
-    /*This defines the food that will pop up on the grid*/
+
     .food {
-      /*This is the food's color, can be changed though using the color slide*/
       background-color: red;
     }
-    /*This defines the grid size box that is what determines the size of the grid*/
+
     #grid-size {
-      /*distance between the grid size text and the actual grid*/
       margin-bottom: 10px;
     }
   </style>
@@ -66,12 +58,11 @@
 </head>
 
 <body>
-    <!--This is put within the header that was defined within the <style> part, just my name and the project-->
+
     <div id="header">
         <h3>Charles Villa</h3>
-        <h3>SSW Final Project</h3>
     </div>
-  <!--This is the grid size button that has a number input type and only accepts values from 5 to 30, but the default every time the page is loaded is 15-->
+
   <div id="game-container">
     <label for="grid-size">Grid Size:</label>
     <input type="number" id="grid-size" value="15" min="5" max="30">
@@ -80,63 +71,47 @@
   </div>
 
   <script>
-    //assigns a variable to the number that is determined by the grid-size HTML input
     const gridSizeInput = document.getElementById('grid-size');
-    //assigns a variable to the game board defined by the game-board HTML definition
     const gameBoard = document.getElementById('game-board');
-    //Where the snake will always start when the game begins
     let snake = [{ x: 1, y: 1 }];
-    //Where the food will always start when the game begins, will get randomized anyway though
     let food = { x: 4, y: 4 };
-    //Stores the direction the snake is moving in
     let direction = null;
-    //Checks whether the game is running or not, initialized to false
     let gameRunning = false;
-    //Checks if a change in direction for the snake is allowed or not, initialized to true
     let directionChangeAllowed = true;
-    //This will control the game's data essentially, will be updated every 200 milliseconds, but that's written later
     let intervalId = null;
-    //Score starts at 0
     let score = 0;
-  
-    //This function sets up the game board
+
     function initializeGameBoard() {
-      //Gets the value from the grid-size input number and stores it into the variable gridSize
       const gridSize = parseInt(gridSizeInput.value);
-      //Resets game board before it gets set up
       gameBoard.innerHTML = '';
-      //These create the columns and rows using the gridSize number from above, using the same sizes as before as well
       gameBoard.style.gridTemplateColumns = `repeat(${gridSize}, 20px)`;
       gameBoard.style.gridTemplateRows = `repeat(${gridSize}, 20px)`;
-      //This for loop displays the grid by creating the cells and defining them using the class 'cell' that was made before, then they're appended to the board
+
       for (let i = 0; i < gridSize * gridSize; i++) {
         const cell = document.createElement('div');
         cell.classList.add('cell');
         gameBoard.appendChild(cell);
       }
     }
-    //This function actually draws the board
+
     function draw() {
-      //This grabs all the items under the class 'cell' and stores them into the constant cells
       const cells = document.querySelectorAll('.cell');
-      //Removes the snake and food classes from each cell
       cells.forEach(cell => cell.classList.remove('snake', 'food'));
-      //Adds the snake class to any given cell that fits the criteria of being part of the snake
+
       snake.forEach(segment => {
         const index = segment.y * gridSizeInput.value + segment.x;
         cells[index].classList.add('snake');
       });
-      //Adds the food class to any given cell that fits the criteria
+
       const foodIndex = food.y * gridSizeInput.value + food.x;
       cells[foodIndex].classList.add('food');
     }
-    //This constantly updates the state of the game
+
     function update() {
-      //This makes it so that the function quits when the game isn't running
       if (!gameRunning) return;
-      //Copies the head of the snake that was defined before
+
       const head = { ...snake[0] };
-      //All these switch cases update the head's coordinates depending on where the direction of the head is going
+
       switch (direction) {
         case 'up':
           head.y -= 1;
@@ -151,132 +126,105 @@
           head.x += 1;
           break;
       }
-      //This checks to see if the head of the snake reaches any of the 4 walls of the grid, if it does then the game ends
+
       if (head.x < 0 || head.x >= gridSizeInput.value || head.y < 0 || head.y >= gridSizeInput.value) {
         gameOver();
         return;
       }
-      //Game ends if the head hits any part of the body
+
       if (checkSelfCollision(head)) {
         gameOver();
         return;
       }
-      //Checks if the head hits a food cell, if it does then the score increases by 1 and a new food cell is generated somewhere random on the board
+
       if (head.x === food.x && head.y === food.y) {
         generateRandomFoodPosition();
         score += 1;
       } else {
-        //This else statement gets rid of the last segment on the snake every time it moves and doesn't collect food to make it look like it's actually moving
         snake.pop();
       }
-      //Adds a snake cell to the head
+
       snake.unshift(head);
-      //Updates the board by calling the draw function again
       draw();
-      //Makes it so that a direction change is allowed next time this runs
       directionChangeAllowed = true;
     }
-    //This function was called above, but it's to check to see if the snake hits any part of itself
+
     function checkSelfCollision(head) {
-      //This loops through the different segments of the snake, but excludes the head because the head can't hit the head
-      //Checks if the head's coordinates match any of the other snake segment coordinates
       for (let i = 1; i < snake.length; i++) {
         if (head.x === snake[i].x && head.y === snake[i].y) {
-          //If coordinates match, it returns true to signal that a collision happened
           return true;
         }
       }
-      //If no coordinates match, it returns false to signal that no collision happened
       return false;
     }
-    //This function is for when the game finishes
+
     function gameOver() {
-      //This alert pops up at the top of the screen telling the player that their game is over and the score that they had
       alert(`Game Over! Your Score: ${score}`);
-      //Resets the snake and food positions to start a new round
       snake = [{ x: 1, y: 1 }];
       food = { x: 4, y: 4 };
-      //These are the same as before
       direction = null;
       gameRunning = false;
       directionChangeAllowed = true;
-      //Wipes the intervalId to prepare for a new round
       clearInterval(intervalId);
-      //Score gets reset
       score = 0;
       draw();
     }
-    //This function puts a food cell at a random position within the game board
+
     function generateRandomFoodPosition() {
-      //This gets the size of the game board from gridSize
       const gridSize = parseInt(gridSizeInput.value);
-      //Creates a new variable which stores the food positions
       let newFoodPosition;
-      //Do while loop that generates a random x and y location for the food cell, makes sure that the food cell isn't within the snake's body
+
       do {
         newFoodPosition = {
           x: Math.floor(Math.random() * gridSize),
           y: Math.floor(Math.random() * gridSize),
         };
       } while (isFoodInsideSnake(newFoodPosition));
-      //Once a new position is assigned, it gets assigned to a new variable called food
+
       food = newFoodPosition;
     }
-    //This function is to check whether or not the food cell is within the snake's head or body
+
     function isFoodInsideSnake(position) {
-      //This checks the snake array for if one of the cells within the array meets the conditions set afterwards
-      //Those conditions are if any given segment in the snake have the same x and y values as the food cell's x and y values
-      //Will return true if a segment overlaps, false if not
       return snake.some(segment => segment.x === position.x && segment.y === position.y);
     }
-    //Handles key presses and snake movement
+
     document.addEventListener('keydown', (event) => {
-      //This will run if the game is not running
       if (!gameRunning) {
-        //Makes the game now run
         gameRunning = true;
-        //The snake starts the game going to the right
         direction = 'right';
-        //Calls the initializeGameBoard function which will create the new game board which is defined by the inputted grid size
         initializeGameBoard();
-        //This calls the update function every 200 milliseconds to update the intervalID
         intervalId = setInterval(update, 200);
       }
-      //If directionChangeAllowed is True then these switch cases can run
+
       if (directionChangeAllowed) {
         switch (event.key) {
-          //If the current snake direction isn't down, then the direction is set to up so the snake will move upwards
           case 'ArrowUp':
             if (direction !== 'down') {
               direction = 'up';
             }
             break;
-          //If the current snake direction isn't up, then the direction is set to down so the snake will move downwards
           case 'ArrowDown':
             if (direction !== 'up') {
               direction = 'down';
             }
             break;
-          //If the current snake direction isn't right, then the direction is set to left so the snake will move leftwards
           case 'ArrowLeft':
             if (direction !== 'right') {
               direction = 'left';
             }
             break;
-          //If the current snake direction isn't left, then the direction is set to right so the snake will move rightwards
           case 'ArrowRight':
             if (direction !== 'left') {
               direction = 'right';
             }
             break;
         }
-        //After one of these is ran, directionChangeAllowed is changed to false to prevent mess ups with buttons being clicked too quickly
         directionChangeAllowed = false;
       }
     });
-    //Listens for the arrow keys which can be used to change the game board size using gridSize
+
     gridSizeInput.addEventListener('input', initializeGameBoard);
-    //Calls the initializeGameBoard function to reset the game board every time the page is loaded or reloaded
+
     initializeGameBoard();
     draw();
   </script>
